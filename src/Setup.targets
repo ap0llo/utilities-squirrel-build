@@ -17,6 +17,19 @@
         <_SetupPackageIdAndVersion>$(PackageId).$(PackageVersion)</_SetupPackageIdAndVersion> 
     </PropertyGroup>
 
+    <PropertyGroup>
+        <!-- new "Sdk-based" csprojs define the targetframework moniker (like net461) in the TargetFramework variable -->
+        <_SetupNugetTarget>lib\$(TargetFramework)</_SetupNugetTarget>
+        <!--
+            Old "classic" csproj always target .Net Framework and define the framework version in the $(TargetFrameworkVersion) variable.
+            The $(TargetFrameworkVersion) variable uses a format like 'v4.6.2'
+            If $(TargetFramework) is not set, determine target folder based on $(TargetFrameworkVersion)              
+        -->
+        <_SetupNugetTarget Condition="'$(TargetFramework)' == ''">lib\net$(TargetFrameworkVersion.Replace('v', '').Replace('.', ''))</_SetupNugetTarget>
+    </PropertyGroup>
+
+
+
     <!-- Target to create a Squirrel setup package -->
     <Target Name="CreateSetup" AfterTargets="CopyFilesToOutputDirectory" Condition="$(RunCreateSetup)">
         <!-- Copy file to tmp directory -->
@@ -35,11 +48,11 @@
     </Target>
 
     <!-- Create a .nuspec file for the setup package-->
-     <Target Name="_CreateNuspec">
+    <Target Name="_CreateNuspec">        	
         <MakeDir Directories="$(SetupTmpPath)" />
         <CreateSetupNuspec OutputPath="$(SetupTmpPath)$(_SetupPackageIdAndVersion).nuspec" 
                            InputDirectory="$(_SetupInputFilesPath)"
-                           Target="lib\$(TargetFramework)"
+                           Target="$(_SetupNugetTarget)"
                            PackageId="$(PackageId)"
                            PackageVersion="$(PackageVersion)"
                            Authors="$(Authors)"
