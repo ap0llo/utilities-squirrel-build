@@ -3,14 +3,14 @@
     <metadata>
         <id>Grynwald.Utilities.Squirrel.Build</id>
         <version>1.0.0</version>
-        <authors>Andreas Grünwald</authors>        
-        <owners>Andreas Grünwald</owners> <!--TODO: update to use Nuget.org identity -->
+        <authors>ap0llo</authors>                
         <licenseUrl>https://github.com/ap0llo/utilities-squirrel-build/blob/master/LICENSE</licenseUrl>
         <projectUrl>http://github.com/ap0llo/utilities-squirrel-build</projectUrl>    
         <requireLicenseAcceptance>false</requireLicenseAcceptance>
         <description>Setup targets to create Squirrel.Windows based installers for .Net projects</description>
         <copyright>Copyright ©2017 Andreas Grünwald</copyright>    
         <tags>setup installer squirrel windows</tags>
+        <developmentDependency>true</developmentDependency>
     </metadata>    
     
     <files>
