@@ -20,9 +20,5 @@ environment:
     secure: Ezm9yOuGI+UAT4+HvumnvKyIh15SWeNS4PvrzbXnQWIjSCJUMwcl2/zaXS69MrqZ
 
 on_success:
-  - git config --global credential.helper store
-  - ps: Add-Content "$env:USERPROFILE\.git-credentials" "https://$($env:access_token):x-oauth-basic@github.com`n"  
-  - git tag v$(APPVEYOR_BUILD_VERSION) $(APPVEYOR_REPO_COMMIT)
-  - git push v$(APPVEYOR_BUILD_VERSION)
-
+  - ps: ./appveyor.onsuccess.ps1
     
