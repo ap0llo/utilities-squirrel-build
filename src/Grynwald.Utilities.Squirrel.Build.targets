@@ -1,4 +1,4 @@
-<!-- Defines the CreateSetup target -->
+<!-- Defines the BuildSetup target -->
 <Project>
 
     <!-- 
@@ -79,7 +79,7 @@
 
     <!-- Determine default values for paths that might have been set in project file -->    
     <PropertyGroup>
-        <RunCreateSetup Condition="'$(RunCreateSetup)' == ''">false</RunCreateSetup>
+        <BuildSetupOnBuild Condition="'$(BuildSetupOnBuild)' == ''">false</BuildSetupOnBuild>
         <SetupTmpPath Condition="'$(SetupTmpPath)' == ''">$(BaseIntermediateOutputPath)$(Configuration)\$(TargetFramework)\Setup\</SetupTmpPath>
         <SetupOutputPath Condition="'$(SetupOutputPath)' == ''">$(OutputPath)$(TargetFramework)\Setup</SetupOutputPath>        
     </PropertyGroup>
@@ -101,10 +101,12 @@
         <_SetupNugetTarget Condition="'$(TargetFramework)' == ''">lib\net$(TargetFrameworkVersion.Replace('v', '').Replace('.', ''))</_SetupNugetTarget>
     </PropertyGroup>
 
-
+    <PropertyGroup>
+        <BuildSetupAfterTargets Condition="$(BuildSetupOnBuild)">Build</BuildSetupAfterTargets>        
+    </PropertyGroup>
 
     <!-- Target to create a Squirrel setup package -->
-    <Target Name="CreateSetup" AfterTargets="CopyFilesToOutputDirectory" Condition="$(RunCreateSetup)">
+    <Target Name="BuildSetup" AfterTargets="$(BuildSetupAfterTargets)" DependsOnTargets="Build" >
         <!-- Copy file to tmp directory -->
         <CallTarget Targets="_CopySetupInputFiles"/>
         <!-- Create nuget package -->
@@ -112,6 +114,7 @@
         <!-- Build Squirrel installer from nuget package-->
         <CallTarget Targets="_RunSquirrel" />
     </Target>
+
 
     <!-- Copy all files to be included in the setup to a (temporary) directory -->
     <Target Name="_CopySetupInputFiles" DependsOnTargets="DetermineSetupInputFiles">           
