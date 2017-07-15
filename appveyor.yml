@@ -3,7 +3,7 @@ build_script:
 - ps: .\build.ps1
 
 artifacts:    
-  - path: .\*.nupkg
+  - path: .\build\*.nupkg
 
 skip_tags: true
 
