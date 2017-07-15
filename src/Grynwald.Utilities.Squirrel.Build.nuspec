@@ -15,7 +15,6 @@
     
     <files>
         <file src="Grynwald.Utilities.Squirrel.targets" target="build" />
-        <file src="Setup.targets" target="build" />
-        <file src="Setup.tasks" target="build" />
+        <file src="Setup.targets" target="build" />        
     </files>
 </package>
