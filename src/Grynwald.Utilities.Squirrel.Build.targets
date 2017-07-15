@@ -77,11 +77,13 @@
 		</Task>
 	</UsingTask> 
 
-    <!-- Determine default values for paths that might have been set in project file -->    
+    <!-- Determine default values for values that might have been set in project file -->    
     <PropertyGroup>
         <BuildSetupOnBuild Condition="'$(BuildSetupOnBuild)' == ''">false</BuildSetupOnBuild>
         <SetupTmpPath Condition="'$(SetupTmpPath)' == ''">$(BaseIntermediateOutputPath)$(Configuration)\$(TargetFramework)\Setup\</SetupTmpPath>
         <SetupOutputPath Condition="'$(SetupOutputPath)' == ''">$(OutputPath)$(TargetFramework)\Setup</SetupOutputPath>        
+        <PackageId Condition="'$(PackageId)' == ''">$(MSBuildProjectName)</PackageId>
+        <Description Condition="'$(Description)' == ''">$(MsBuildProjectName)</Description>
     </PropertyGroup>
 
     <!-- Set "internal" properties for setup targets -->
