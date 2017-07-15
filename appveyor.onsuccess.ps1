@@ -17,7 +17,7 @@ if($branchName -ne "master")
     exit
 }
 
-Write-Host "Addint tag '$($tagName)' for commit $($commit)"
+Write-Host "Adding tag '$($tagName)' for commit $($commit)"
 Invoke-Expression "git config --global credential.helper store"
 Add-Content "$env:USERPROFILE\.git-credentials" "https://$($env:access_token):x-oauth-basic@github.com`n"  
 Invoke-Expression "git tag $($tagName) $($commit)"
