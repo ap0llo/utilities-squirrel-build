@@ -1,3 +1,197 @@
+<!-- Defines the CreateSetup target -->
 <Project>
-    <Import Project="$(MSBuildThisFileDirectory)Setup.targets">
+
+    <!-- 
+        CreateSetupNuspec: Task that generates a new nuspec file with all the files included in the setup
+    -->		
+	<UsingTask TaskName="CreateSetupNuspec" 
+               TaskFactory="CodeTaskFactory" 
+               AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.Core.dll" >  
+		<ParameterGroup>			
+			<OutputPath ParameterType="System.String" Required="true" />
+            <InputDirectory ParameterType="System.String" Required="true" />
+            <Target ParameterType="System.String" Required="true" />
+            <PackageId ParameterType="System.String" Required="true" />
+            <PackageVersion ParameterType="System.String" Required="true" />
+            <Description ParameterType="System.String" Required="true" />
+            <Authors ParameterType="System.String" Required="true" />
+		</ParameterGroup>
+        
+		<Task>            
+            <Reference Include="System.Xml"/>  
+            <Reference Include="System.Xml.Linq"/>  
+            
+            <Using Namespace="System"/>  
+            <Using Namespace="System.IO"/>  
+            <Using Namespace="System.Xml.Linq"/>  
+			
+			<Code Type="Fragment" Language="cs">
+			<![CDATA[
+
+                // helper functions (we cannot use C# 7 local functions here)
+                Func<string, string, string> getRelativePath = 
+                    (string dirPath, string relativeTo) => 
+                    {
+                        var fileUri = new Uri(dirPath);
+                        var referenceUri = new Uri(Path.Combine(relativeTo, "dummmy"));
+                        return referenceUri
+                                    .MakeRelativeUri(fileUri)
+                                    .ToString()
+                                    .Replace('/', Path.DirectorySeparatorChar);
+                    };
+
+
+                InputDirectory = Path.GetFullPath(InputDirectory);
+                var outputDirectory = Path.GetDirectoryName(OutputPath);                
+
+                var nugetNamespace = XNamespace.Get("http://schemas.microsoft.com/packaging/2010/07/nuspec.xsd");
+
+                var document = new XDocument(new XDeclaration("1.0", "utf-8", null));
+                var packageElement = new XElement(nugetNamespace.GetName("package"));
+                document.Add(packageElement);
+
+                var metadataElement = new XElement(nugetNamespace.GetName("metadata"));
+                packageElement.Add(metadataElement);
+
+                metadataElement.Add(
+                    new XElement(nugetNamespace.GetName("id"), PackageId),
+                    new XElement(nugetNamespace.GetName("version"), PackageVersion),
+                    new XElement(nugetNamespace.GetName("authors"), Authors),
+                    new XElement(nugetNamespace.GetName("description"), Description)
+                );
+
+                var filesElement = new XElement(nugetNamespace.GetName("files"));
+                packageElement.Add(filesElement);
+
+                filesElement.Add(
+                    new XElement(
+                        nugetNamespace.GetName("file"),
+                        //new XAttribute("src", getRelativePath(InputDirectory, outputDirectory) + "**" + Path.DirectorySeparatorChar + "*"),
+						new XAttribute("src", InputDirectory + "**" + Path.DirectorySeparatorChar + "*"),
+                        new XAttribute("target", Target)
+                    )
+                );
+                document.Save(OutputPath);
+			]]>
+			</Code>
+		</Task>
+	</UsingTask> 
+
+    <!-- Determine default values for paths that might have been set in project file -->    
+    <PropertyGroup>
+        <RunCreateSetup Condition="'$(RunCreateSetup)' == ''">false</RunCreateSetup>
+        <SetupTmpPath Condition="'$(SetupTmpPath)' == ''">$(BaseIntermediateOutputPath)$(Configuration)\$(TargetFramework)\Setup\</SetupTmpPath>
+        <SetupOutputPath Condition="'$(SetupOutputPath)' == ''">$(OutputPath)$(TargetFramework)\Setup</SetupOutputPath>        
+    </PropertyGroup>
+
+    <!-- Set "internal" properties for setup targets -->
+    <PropertyGroup>        
+        <_SetupInputFilesPath>$(SetupTmpPath)Files\</_SetupInputFilesPath>        
+        <_SetupPackageIdAndVersion>$(PackageId).$(PackageVersion)</_SetupPackageIdAndVersion> 
+    </PropertyGroup>
+
+    <PropertyGroup>
+        <!-- new "Sdk-based" csprojs define the targetframework moniker (like net461) in the TargetFramework variable -->
+        <_SetupNugetTarget>lib\$(TargetFramework)</_SetupNugetTarget>
+        <!--
+            Old "classic" csproj always target .Net Framework and define the framework version in the $(TargetFrameworkVersion) variable.
+            The $(TargetFrameworkVersion) variable uses a format like 'v4.6.2'
+            If $(TargetFramework) is not set, determine target folder based on $(TargetFrameworkVersion)              
+        -->
+        <_SetupNugetTarget Condition="'$(TargetFramework)' == ''">lib\net$(TargetFrameworkVersion.Replace('v', '').Replace('.', ''))</_SetupNugetTarget>
+    </PropertyGroup>
+
+
+
+    <!-- Target to create a Squirrel setup package -->
+    <Target Name="CreateSetup" AfterTargets="CopyFilesToOutputDirectory" Condition="$(RunCreateSetup)">
+        <!-- Copy file to tmp directory -->
+        <CallTarget Targets="_CopySetupInputFiles"/>
+        <!-- Create nuget package -->
+        <CallTarget Targets="_RunNuget" />
+        <!-- Build Squirrel installer from nuget package-->
+        <CallTarget Targets="_RunSquirrel" />
+    </Target>
+
+    <!-- Copy all files to be included in the setup to a (temporary) directory -->
+    <Target Name="_CopySetupInputFiles" DependsOnTargets="DetermineSetupInputFiles">           
+        <RemoveDir Directories="$(_SetupInputFilesPath)" />   
+        <MakeDir Directories="$(_SetupInputFilesPath)" />               
+        <Copy SourceFiles="@(SetupInputFiles)"  DestinationFolder="$(_SetupInputFilesPath)%(RecursiveDir)" />         
+    </Target>
+
+    <!-- Create a .nuspec file for the setup package-->
+    <Target Name="_CreateNuspec">        	
+        <MakeDir Directories="$(SetupTmpPath)" />
+        <CreateSetupNuspec OutputPath="$(SetupTmpPath)$(_SetupPackageIdAndVersion).nuspec" 
+                           InputDirectory="$(_SetupInputFilesPath)"
+                           Target="$(_SetupNugetTarget)"
+                           PackageId="$(PackageId)"
+                           PackageVersion="$(PackageVersion)"
+                           Authors="$(Authors)"
+                           Description="$(Description)" />
+    </Target>
+    
+
+    <!-- Run nuget pack -->
+    <Target Name="_RunNuget" 
+            DependsOnTargets="_CreateNuspec;_DetermineSetupNuGetVersion">
+
+        <PropertyGroup>
+            <_NugetPath>$(NuGetPackageRoot)Nuget.CommandLine\$(SetupNuGetVersion)\tools\nuget.exe</_NugetPath>
+        </PropertyGroup>
+
+        <Error Text="Nuget version could not be determined. Make sure Nuget.Commandline package is installed"
+               Condition=" '$(SetupNuGetVersion)' == ''"/>        
+        <Error Text="nuget.exe could not be found. Make sure the 'Nuget.Commandline' package is installed. Path: '$(_NugetPath)'"
+               Condition="!Exists('$(_NugetPath)')" />        
+
+        <Exec Command="&quot;$(_NugetPath)&quot; pack $(SetupTmpPath)$(_SetupPackageIdAndVersion).nuspec"
+              WorkingDirectory="$(SetupTmpPath)" />
+    </Target>
+
+
+    <Target Name="_DetermineSetupNuGetVersion" Condition="'$(SetupNugetVersion)' == ''">
+        <ItemGroup>
+            <Package-Nuget-CommandLine Include="@(PackageReference)" Condition=" '%(Identity)' == 'Nuget.CommandLine' " />            
+        </ItemGroup>
+
+        <CreateProperty Value="%(Package-Nuget-CommandLine.Version)">  
+            <Output TaskParameter="Value" PropertyName="SetupNuGetVersion" />  
+        </CreateProperty>     
+
+        <Message Text="Automatically detected Nuget version: $(SetupNugetVersion)" />     
+    </Target>
+
+
+    <Target Name="_DetermineSetupSquirrelVersion" Condition="'$(SetupSquirrelVersion)' == ''">
+        <ItemGroup>
+            <Package-Squirrel-Windows Include="@(PackageReference)" Condition=" '%(Identity)' == 'Squirrel.Windows' " />            
+        </ItemGroup>
+        
+        <CreateProperty Value="%(Package-Squirrel-Windows.Version)">  
+            <Output TaskParameter="Value" PropertyName="SetupSquirrelVersion" />  
+        </CreateProperty>          
+
+        <Message Text="Automatically detected Squirrel.Windows version: $(SetupSquirrelVersion)" />     
+    </Target>
+
+
+    <!-- Build a squirrel setup package from the nuget package we created -->
+    <Target Name="_RunSquirrel" DependsOnTargets="_DetermineSetupSquirrelVersion">
+
+        <PropertyGroup>
+            <_SquirrelPath>$(NuGetPackageRoot)Squirrel.Windows\$(SetupSquirrelVersion)\tools\Squirrel.exe</_SquirrelPath>
+        </PropertyGroup>
+
+        <Error Text="Squirrel version could not be determined. Make sure Squirrel.Windows is installed "
+               Condition=" '$(SetupSquirrelVersion)' == ''"/>        
+        <Error Text="Squirrel.exe could not be found. Make sure Squirrel.Windows is installed. Path: '$(_SquirrelPath)'"
+               Condition="!Exists('$(_SquirrelPath)')" />        
+
+        <MakeDir Directories="$(SetupOutputPath)" />
+        <Exec Command="$(_SquirrelPath) --releasify $(SetupTmpPath)$(_SetupPackageIdAndVersion).nupkg --no-msi --no-delta --releaseDir=$(SetupOutputPath)" 
+              WorkingDirectory="$(SetupTmpPath)" />
+    </Target>
+   
 </Project>
