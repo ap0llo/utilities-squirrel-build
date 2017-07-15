@@ -8,17 +8,17 @@ Building setup packages should work for both "classic" csprojs as well as new "S
 Usage
 ------
 
-*The following guide assumes you know how to package an application using Squirrel. Refer to the [Squirrel documentation](https://github.com/Squirrel/Squirrel.Windows/blob/master/docs/getting-started/0-overview.md) for details*
+*The following guide assumes you know how to package an application using Squirrel. Please refer to the [Squirrel documentation](https://github.com/Squirrel/Squirrel.Windows/blob/master/docs/getting-started/0-overview.md) for details.*
 
 ### Installing Packages
 - Include package in your project-file
-
+    ```
     Install-Package Grynwald.Utilities.Squirrel.Build
-
+    ```
 In order to create an installer, the Squirrel and Nuget executables are required. Both of them
 are distributed as NuGet packages (`Squirrel.Windows` and `NuGet.CommandLine`)
 
-- For Visual Studio 2017, including the required packages as package reference is sufficient
+- For Visual Studio 2017/MSBuild 15, including the required packages as package reference is sufficient
     ```xml
     <PackageReference Include="Squirrel.Windows" Version="1.7.7" />
     <PackageReference Include="NuGet.CommandLine" Version="4.1.0" />
@@ -36,8 +36,15 @@ are distributed as NuGet packages (`Squirrel.Windows` and `NuGet.CommandLine`)
 
 ### Configure setup
 You'll need to add some settings to your csproj to successfully build a setup
-- PackageVersion: The version of your application
+- PackageVersion: The version of your application. 
 - Authors: You name. This will show up as publisher in the Control Panel's installed application list
+- Example
+    ```xml
+    <PropertyGroup>
+        <PackageVersion>1.2.3</PackageVersion>
+        <Authors>Author name</Authors>
+    </PropertyGroup>
+    ```
 - See also [NuGet Package Metadata](https://github.com/Squirrel/Squirrel.Windows/blob/master/docs/using/nuget-package-metadata.md)
 
 - Define a MSBuild target called `DetermineSetupInputFiles`. This target will be called by the `BuildSetup` target and is responsible
@@ -47,8 +54,8 @@ You'll need to add some settings to your csproj to successfully build a setup
     ```xml
     <Target Name="DetermineSetupInputFiles">
         <ItemGroup>
-        <SetupInputFiles Include="$(OutputPath)**\*.dll" />    
-        <SetupInputFiles Include="$(OutputPath)**\*.exe" />
+            <SetupInputFiles Include="$(OutputPath)**\*.dll" />    
+            <SetupInputFiles Include="$(OutputPath)**\*.exe" />
         </ItemGroup>
     </Target>
     ```
