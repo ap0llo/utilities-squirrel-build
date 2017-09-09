@@ -109,6 +109,7 @@
 
     <!-- Target to create a Squirrel setup package -->
     <Target Name="BuildSetup" AfterTargets="$(BuildSetupAfterTargets)" DependsOnTargets="Build" >
+        <Message Text="Building Squirrel setup for $(TargetName)" Importance="High" />
         <!-- Copy file to tmp directory -->
         <CallTarget Targets="_CopySetupInputFiles"/>
         <!-- Create nuget package -->
