@@ -152,7 +152,8 @@
                Condition="!Exists('$(_NugetPath)')" />        
 
         <Exec Command="&quot;$(_NugetPath)&quot; pack $(SetupTmpPath)$(_SetupPackageIdAndVersion).nuspec"
-              WorkingDirectory="$(SetupTmpPath)" />
+              WorkingDirectory="$(SetupTmpPath)" 
+              StandardOutputImportance="normal" />
     </Target>
 
 
@@ -165,7 +166,7 @@
             <Output TaskParameter="Value" PropertyName="SetupNuGetVersion" />  
         </CreateProperty>     
 
-        <Message Text="Automatically detected Nuget version: $(SetupNugetVersion)" />     
+        <Message Text="Automatically detected Nuget version: $(SetupNugetVersion)" Importance="Normal" />     
     </Target>
 
 
@@ -178,7 +179,7 @@
             <Output TaskParameter="Value" PropertyName="SetupSquirrelVersion" />  
         </CreateProperty>          
 
-        <Message Text="Automatically detected Squirrel.Windows version: $(SetupSquirrelVersion)" />     
+        <Message Text="Automatically detected Squirrel.Windows version: $(SetupSquirrelVersion)" Importance="Normal"  />     
     </Target>
 
 
@@ -196,7 +197,8 @@
 
         <MakeDir Directories="$(SetupOutputPath)" />
         <Exec Command="$(_SquirrelPath) --releasify $(SetupTmpPath)$(_SetupPackageIdAndVersion).nupkg --no-msi --no-delta --releaseDir=$(SetupOutputPath)" 
-              WorkingDirectory="$(SetupTmpPath)" />
+              WorkingDirectory="$(SetupTmpPath)" 
+              StandardOutputImportance="normal" />
     </Target>
    
 </Project>
