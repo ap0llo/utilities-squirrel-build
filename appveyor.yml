@@ -10,7 +10,7 @@ skip_tags: true
 deploy:
   provider: NuGet
   api_key:
-    secure: iIbmH7qv3+iqfyN1qWiz78GLyvA1gGs6vKbOXyZkLiq3FQlyHeB6uG+4+2EJRo7W
+    secure: sD1Mqna/No7FEYPFA8kGXQ4vFm4JLkOTPRKY94xiiuQki5KR38A21i9iuWE89FvE
   skip_symbols : true  
   on:
     branch: master
